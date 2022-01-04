@@ -19,44 +19,69 @@ class OrderItem {
   });
 }
 
-class Order with ChangeNotifier {
+class Orders with ChangeNotifier {
   List<OrderItem> _orders = [];
 
   List<OrderItem> get orders {
     return [..._orders];
   }
 
+  Future<void> fetchAndSetOrders() async {
+    final url =
+        Uri.https('shop-app-747bd-default-rtdb.firebaseio.com', 'orders.json');
+    final response = await http.get(url);
+    final List<OrderItem> loadedOrders = [];
+    final extractedData = json.decode(response.body) as Map<String, dynamic>;
+    if (extractedData == null) {
+      _orders = [];
+      notifyListeners();
+      return;
+    }
+    extractedData.forEach((orderId, orderData) {
+      loadedOrders.add(OrderItem(
+          id: orderId,
+          amount: orderData['amount'],
+          dateTime: DateTime.parse(orderData['dateTime']),
+          products: (orderData['products'] as List<dynamic>)
+              .map((item) => cartItem(
+                  id: item['id'],
+                  price: item['price'],
+                  quantity: item['quantity'],
+                  title: item['title']))
+              .toList()));
+    });
+    _orders = loadedOrders.reversed.toList();
+    notifyListeners();
+  }
+
   Future<void> addOrder(List<cartItem> cartProducts, double total) async {
     final url =
         Uri.https('shop-app-747bd-default-rtdb.firebaseio.com', 'orders.json');
-    final timeStamp = DateTime.now();
-    try {
-      final response = await http.post(
-        url,
-        body: jsonEncode({
-          'amount': total.toStringAsFixed(2),
-          'dateTime': timeStamp.toIso8601String(),
-          'products': cartProducts
-              .map((cp) => {
-                    'id': cp.id,
-                    'title:': cp.title,
-                    'quantity': cp.quantity,
-                    'price': cp.price.toStringAsFixed(2),
-                  })
-              .toList(),
-        }),
-      );
-      final newOrder = OrderItem(
-        id: jsonDecode(response.body)['name'],
+    final timestamp = DateTime.now();
+    final response = await http.post(
+      url,
+      body: json.encode({
+        'amount': total,
+        'dateTime': timestamp.toIso8601String(),
+        'products': cartProducts
+            .map((cp) => {
+                  'id': cp.id,
+                  'title': cp.title,
+                  'quantity': cp.quantity,
+                  'price': cp.price,
+                })
+            .toList(),
+      }),
+    );
+    _orders.insert(
+      0,
+      OrderItem(
+        id: json.decode(response.body)['name'],
         amount: total,
-        dateTime: timeStamp,
+        dateTime: timestamp,
         products: cartProducts,
-      );
-      _orders.insert(0, newOrder);
-      notifyListeners();
-    } catch (error) {
-      print(error);
-      throw error;
-    }
+      ),
+    );
+    notifyListeners();
   }
 }
