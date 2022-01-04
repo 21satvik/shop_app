@@ -67,10 +67,10 @@ class Products with ChangeNotifier {
   //   notifyListeners();
   // }
 
-  void addProduct(Product product) {
+  Future<void> addProduct(Product product) {
     final url = Uri.https(
         'shop-app-747bd-default-rtdb.firebaseio.com', 'products.json');
-    http
+    return http
         .post(url,
             body: json.encode({
               'title': product.title,
@@ -89,6 +89,7 @@ class Products with ChangeNotifier {
       );
       _items.add(newProduct);
       notifyListeners();
+      // return Future.delayed(Duration(seconds: 3)); for some manual delay
     });
   }
 
