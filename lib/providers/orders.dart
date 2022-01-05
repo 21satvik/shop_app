@@ -22,13 +22,22 @@ class OrderItem {
 
 class Orders with ChangeNotifier {
   List<OrderItem> _orders = [];
+  String authToken;
+  String userId;
+  void update(String token, String uId) {
+    authToken = token;
+    userId = uId;
+  }
 
   List<OrderItem> get orders {
     return [..._orders];
   }
 
   Future<void> fetchAndSetOrders() async {
-    final url = Uri.https(MyConfig.url, 'orders.json');
+    var _params = {
+      'auth': authToken,
+    };
+    final url = Uri.https(MyConfig.url, '/orders/$userId.json', _params);
     final response = await http.get(url);
     final List<OrderItem> loadedOrders = [];
     final extractedData = json.decode(response.body) as Map<String, dynamic>;
@@ -55,7 +64,10 @@ class Orders with ChangeNotifier {
   }
 
   Future<void> addOrder(List<cartItem> cartProducts, double total) async {
-    final url = Uri.https(MyConfig.url, 'orders.json');
+    var _params = {
+      'auth': authToken,
+    };
+    final url = Uri.https(MyConfig.url, '/orders/$userId.json', _params);
     final timestamp = DateTime.now();
     final response = await http.post(
       url,

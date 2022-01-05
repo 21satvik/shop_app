@@ -43,6 +43,12 @@ class Products with ChangeNotifier {
     // ),
   ];
   // var _showFavoritesOnly = false;
+  String authToken;
+  String userId;
+  void update(String token, String uId) {
+    authToken = token;
+    userId = uId;
+  }
 
   List<Product> get items {
     // if (_showFavoritesOnly) {
@@ -69,31 +75,50 @@ class Products with ChangeNotifier {
   //   notifyListeners();
   // }
 
-  Future<void> fetchAndSetProducts() async {
-    final url = Uri.https(MyConfig.url, 'products.json');
+  Future<void> fetchAndSetProducts([bool filterByUser = false]) async {
+    var _params;
+    if (filterByUser) {
+      _params = {
+        "auth": authToken,
+        "orderBy": json.encode("creatorId"),
+        "equalTo": json.encode("$userId"),
+      };
+    } else {
+      _params = {"auth": authToken};
+    }
+    var url = Uri.https(MyConfig.url, "/products.json", _params);
     try {
       final response = await http.get(url);
       final extractedData = jsonDecode(response.body) as Map<String, dynamic>;
       final List<Product> loadedProducts = [];
       if (extractedData == null) return;
+      url = Uri.https(
+          MyConfig.url, '/userFavorites/$userId.json', {'auth': authToken});
+      final favoriteResponse = await http.get(url);
+      final favoriteData = jsonDecode(favoriteResponse.body);
       extractedData.forEach((prodId, prodData) {
         loadedProducts.add(Product(
-            id: prodId,
-            title: prodData['title'],
-            description: prodData['description'],
-            price: prodData['price'],
-            imageUrl: prodData['imageUrl'],
-            isFavorite: prodData['isFavorite']));
+          id: prodId,
+          title: prodData['title'],
+          description: prodData['description'],
+          price: prodData['price'],
+          imageUrl: prodData['imageUrl'],
+          isFavorite:
+              favoriteData == null ? false : favoriteData[prodId] ?? false,
+        ));
       });
       _items = loadedProducts;
       notifyListeners();
     } catch (error) {
-      throw error;
+      print(error);
     }
   }
 
   Future<void> addProduct(Product product) async {
-    final url = Uri.https(MyConfig.url, 'products.json');
+    var _params = {
+      'auth': authToken,
+    };
+    final url = Uri.https(MyConfig.url, '/products.json', _params);
     try {
       final response = await http.post(
         url,
@@ -102,7 +127,7 @@ class Products with ChangeNotifier {
           'description': product.description,
           'price': product.price,
           'imageUrl': product.imageUrl,
-          'isFavorite': product.isFavorite,
+          'creatorId': userId,
         }),
       );
       final newProduct = Product(
@@ -124,7 +149,10 @@ class Products with ChangeNotifier {
   Future<void> updateProduct(String id, Product newProduct) async {
     final prodIndex = _items.indexWhere((prod) => prod.id == id);
     if (prodIndex >= 0) {
-      final url = Uri.https(MyConfig.url, 'products/$id.json');
+      var _params = {
+        'auth': authToken,
+      };
+      final url = Uri.https(MyConfig.url, '/products/$id.json', _params);
       try {
         await http.patch(url,
             body: jsonEncode({
@@ -142,7 +170,10 @@ class Products with ChangeNotifier {
   }
 
   Future<void> deleteProduct(String id) async {
-    final url = Uri.https(MyConfig.url, 'products/$id.json');
+    var _params = {
+      'auth': authToken,
+    };
+    final url = Uri.https(MyConfig.url, '/products/$id.json', _params);
     final existingProductIndex = _items.indexWhere((prod) => prod.id == id);
     var existingProduct = _items[existingProductIndex];
     _items.removeAt(existingProductIndex);
