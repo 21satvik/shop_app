@@ -11,6 +11,7 @@ import './screens/orders_screen.dart';
 import './screens/edit_product_screen.dart';
 import './screens/user_products_screen.dart';
 import './screens/auth_screen.dart';
+import './screens/splash_screen.dart';
 import './providers/auth.dart';
 
 void main() => runApp(MyApp());
@@ -47,7 +48,16 @@ class MyApp extends StatelessWidget {
             accentColor: Colors.deepOrange,
             fontFamily: 'Lato',
           ),
-          home: auth.isAuth ? ProductsOverviewScreen() : AuthScreen(),
+          home: auth.isAuth
+              ? ProductsOverviewScreen()
+              : FutureBuilder(
+                  future: auth.tryAutoLogin(),
+                  builder: (ctx, authResultSnaphot) => authResultSnaphot
+                              .connectionState ==
+                          ConnectionState.waiting
+                      ? SplashScreen() // enquanto espera o waiting acima, mostra essa
+                      : AuthScreen(),
+                ),
           routes: {
             ProductDetailScreen.routeName: (ctx) =>
                 ifAuth(ProductDetailScreen()),

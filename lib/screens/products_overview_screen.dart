@@ -38,6 +38,11 @@ class _ProductsOverviewScreenState extends State<ProductsOverviewScreen> {
   }
 
   @override
+  void dispose() {
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
