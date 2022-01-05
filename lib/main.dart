@@ -37,8 +37,9 @@ class MyApp extends StatelessWidget {
               prevOrders..update(auth.token, auth.userId),
         ),
       ],
-      child: Consumer<Auth>(
-        builder: (ctx, auth, _) => MaterialApp(
+      child: Consumer<Auth>(builder: (ctx, auth, _) {
+        ifAuth(targetScreen) => auth.isAuth ? targetScreen : AuthScreen();
+        return MaterialApp(
           title: 'MyShop',
           debugShowCheckedModeBanner: false,
           theme: ThemeData(
@@ -48,14 +49,15 @@ class MyApp extends StatelessWidget {
           ),
           home: auth.isAuth ? ProductsOverviewScreen() : AuthScreen(),
           routes: {
-            ProductDetailScreen.routeName: (ctx) => ProductDetailScreen(),
-            CartScreen.routeName: (ctx) => CartScreen(),
-            OrdersScreen.routeName: (ctx) => OrdersScreen(),
-            UserProductsScreen.routeName: (ctx) => UserProductsScreen(),
-            EditProductScreen.routeName: (ctx) => EditProductScreen(),
+            ProductDetailScreen.routeName: (ctx) =>
+                ifAuth(ProductDetailScreen()),
+            CartScreen.routeName: (ctx) => ifAuth(CartScreen()),
+            OrdersScreen.routeName: (ctx) => ifAuth(OrdersScreen()),
+            UserProductsScreen.routeName: (ctx) => ifAuth(UserProductsScreen()),
+            EditProductScreen.routeName: (ctx) => ifAuth(EditProductScreen()),
           },
-        ),
-      ),
+        );
+      }),
     );
   }
 }
