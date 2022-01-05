@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
+import '../my_config.dart';
 
 class Product with ChangeNotifier {
   final String id;
@@ -27,8 +28,7 @@ class Product with ChangeNotifier {
 
   Future<void> toggleFavoriteStatus() async {
     final oldStatus = isFavorite;
-    final url = Uri.https(
-        'shop-app-747bd-default-rtdb.firebaseio.com', 'products/$id.json');
+    final url = Uri.https(MyConfig.url, 'products/$id.json');
     isFavorite = !isFavorite;
     try {
       final response =
